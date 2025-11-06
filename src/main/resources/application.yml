@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: notification-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:rabbit}
+    password: ${RABBITMQ_PASS:rabbit}
+  mail:
+    host: ${MAIL_HOST:mailhog}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
+
+notification:
+  rabbitmq:
+    queue-name: order.notifications.queue
+    exchange-name: order.events.exchange
+    routing-key: orders.notification.*
+  mail:
+    from: ${MAIL_FROM:portfolio@notification.local}
+    to: ${MAIL_TO:talent@portfolio.local}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
