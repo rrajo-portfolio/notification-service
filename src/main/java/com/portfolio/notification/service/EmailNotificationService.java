@@ -1,12 +1,16 @@
 package com.portfolio.notification.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.notification.feed.NotificationEvent;
+import com.portfolio.notification.feed.NotificationRegistry;
+import com.portfolio.notification.feed.NotificationSeverity;
 import com.portfolio.notification.service.model.OrderNotification;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Value;
+import java.util.Map;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -19,6 +23,7 @@ public class EmailNotificationService {
 
     private final JavaMailSender mailSender;
     private final ObjectMapper objectMapper;
+    private final NotificationRegistry notificationRegistry;
 
     @Value("${notification.mail.from:portfolio@notification.local}")
     private String fromAddress;
@@ -36,6 +41,7 @@ public class EmailNotificationService {
         try {
             OrderNotification notification = objectMapper.readValue(payload, OrderNotification.class);
             sendEmail(notification);
+              registerFeedEvent(notification);
             log.info("Processed notification for order {}", notification.orderId());
         } catch (Exception ex) {
             log.error("Failed to process order notification payload {}", payload, ex);
@@ -55,5 +61,19 @@ public class EmailNotificationService {
         } catch (MailException mailException) {
             log.warn("Failed to send email for order {}: {}", notification.orderId(), mailException.getMessage());
         }
+    }
+
+    private void registerFeedEvent(OrderNotification notification) {
+        notificationRegistry.register(NotificationEvent.builder()
+            .category("ORDER")
+            .title("Pedido " + notification.orderId())
+            .message("Nuevo estado: " + notification.status() + " · Total " + notification.totalAmount())
+            .severity("CANCELLED".equalsIgnoreCase(notification.status()) ? NotificationSeverity.WARNING : NotificationSeverity.SUCCESS)
+            .metadata(Map.of(
+                "orderId", notification.orderId(),
+                "status", notification.status(),
+                "totalAmount", notification.totalAmount()
+            ))
+            .build());
     }
 }

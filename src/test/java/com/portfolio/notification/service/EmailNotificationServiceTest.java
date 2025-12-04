@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.portfolio.notification.feed.NotificationRegistry;
 import com.portfolio.notification.service.model.OrderNotification;
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -23,13 +24,16 @@ class EmailNotificationServiceTest {
     @Mock
     private JavaMailSender mailSender;
 
+    @Mock
+    private NotificationRegistry notificationRegistry;
+
     @InjectMocks
     private EmailNotificationService emailNotificationService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        emailNotificationService = new EmailNotificationService(mailSender, new ObjectMapper());
+        emailNotificationService = new EmailNotificationService(mailSender, new ObjectMapper(), notificationRegistry);
         ReflectionTestUtils.setField(emailNotificationService, "fromAddress", "from@test.local");
         ReflectionTestUtils.setField(emailNotificationService, "defaultRecipient", "default@test.local");
     }
